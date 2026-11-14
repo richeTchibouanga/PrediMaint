@@ -1,0 +1,51 @@
+{
+  "hypotheses": {
+    "duree_arret_panne_h": 4.0,
+    "cout_horaire_arret": 350.0,
+    "cout_reparation": 500.0,
+    "cout_piece_rebutee": 150.0,
+    "cout_intervention_preventive": 250.0,
+    "cout_fausse_alerte": 100.0,
+    "cout_solution_an": 3000.0,
+    "operations_par_an": 10000
+  },
+  "cout_panne": 2050.0,
+  "seuil_economique": 0.07,
+  "bilan_seuil_alerte": {
+    "seuil": 0.25837959300775976,
+    "pannes_par_an": 340.0,
+    "pannes_evitees": 290.0,
+    "pannes_manquees": 50.0,
+    "fausses_alertes": 90.0,
+    "cout_corrective": 697000.0,
+    "cout_predictive": 187000.0,
+    "detail_predictive": {
+      "interventions_preventives": 72500.0,
+      "pannes_manquees": 102500.0,
+      "fausses_alertes": 9000.0,
+      "solution": 3000.0
+    },
+    "gain": 510000.0,
+    "reduction": 0.7317073170731707,
+    "retour_sur_investissement": 170.0
+  },
+  "bilan_seuil_economique": {
+    "seuil": 0.07,
+    "pannes_par_an": 340.0,
+    "pannes_evitees": 310.0,
+    "pannes_manquees": 30.0,
+    "fausses_alertes": 535.0,
+    "cout_corrective": 697000.0,
+    "cout_predictive": 195500.0,
+    "detail_predictive": {
+      "interventions_preventives": 77500.0,
+      "pannes_manquees": 61500.0,
+      "fausses_alertes": 53500.0,
+      "solution": 3000.0
+    },
+    "gain": 501500.0,
+    "reduction": 0.7195121951219512,
+    "retour_sur_investissement": 167.16666666666666
+  },
+  "cout_panne_minimum_rentable": 300
+}

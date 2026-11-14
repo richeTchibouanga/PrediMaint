@@ -1,0 +1,57 @@
+{
+  "date": "2026-11-14",
+  "modele": "Forêt aléatoire",
+  "variables": "capteurs + variables dérivées",
+  "entrees": [
+    "gamme_code",
+    "temp_air",
+    "temp_process",
+    "vitesse",
+    "couple",
+    "usure_outil",
+    "ecart_temp",
+    "puissance",
+    "contrainte"
+  ],
+  "seuil_alerte": 0.25837959300775976,
+  "test": {
+    "rappel": 0.8529411764705882,
+    "precision": 0.7631578947368421,
+    "f1": 0.8055555555555556,
+    "pr_auc": 0.8694453742959197
+  },
+  "test_seuil_0_5": {
+    "rappel": 0.8088235294117647,
+    "precision": 0.9649122807017544,
+    "f1": 0.88,
+    "pr_auc": 0.8694453742959197
+  },
+  "matrice_confusion": [
+    [
+      1914,
+      18
+    ],
+    [
+      10,
+      58
+    ]
+  ],
+  "rappel_pannes_previsibles": 0.8787878787878788,
+  "type_correct": 0.9393939393939394,
+  "reference": {
+    "temp_air": 300.0,
+    "temp_process": 310.0,
+    "vitesse": 1507.0,
+    "couple": 39.8,
+    "usure_outil": 106.0,
+    "gamme": "L"
+  },
+  "versions": {
+    "python": "3.15.0",
+    "scikit-learn": "1.9.1",
+    "pandas": "3.1.1",
+    "numpy": "2.5.4"
+  },
+  "graine": 42,
+  "taille_test": 2000
+}
