@@ -63,7 +63,32 @@ La partie **« Pourquoi ce risque ? »** explique la décision. Chaque mesure es
 
 Les **indicateurs physiques** confirment ce résultat : la contrainte usure × couple (12 710) dépasse la limite de la gamme L (11 000).
 
-## 5. Analyse d'un lot (F14)
+En cas d'alerte, ou si l'outil est en zone d'usure, le bouton **« Lancer l'intervention guidée »** ouvre la page suivante avec les mesures de la machine.
+
+## 5. Intervention guidée (phase 2)
+
+Cette page transforme le diagnostic en **procédure à suivre**, à partir de 9 fiches de maintenance rédigées pour le projet (dossier `data/procedures/`).
+
+![Intervention guidée](figures/app-7-intervention.png)
+
+1. **Machine** : les mesures, transmises depuis le diagnostic ou saisies, ainsi que le risque, le niveau d'alerte et la panne probable.
+2. **Fiche d'intervention** : la fiche est proposée automatiquement.
+
+   | Situation | Fiche proposée |
+   |---|---|
+   | Alerte du modèle | Fiche du type de panne prédit : PROC-OSF, PROC-HDF, PROC-PWF ou PROC-TWF |
+   | Pas d'alerte, usure ≥ 200 min | PROC-TWF, changement préventif de l'outil |
+   | Pas d'alerte, outil hors de la zone d'usure | Aucune intervention ; une inspection PROC-RNF reste possible |
+
+   Le technicien peut choisir une autre fiche dans la liste.
+3. **Déroulé** : toujours **SEC-01 consignation → SEC-02 protections → fiche d'intervention → CTRL-01 remise en service**. Chaque étape se coche, et une barre indique l'avancement. Les étapes d'intervention **ne s'affichent qu'une fois la consignation entièrement validée**.
+4. **Compte rendu** : le nom du technicien et les observations, puis le téléchargement d'un compte rendu (date, machine, diagnostic, étapes réalisées ou non, observations).
+
+![Déroulé de l'intervention](figures/app-8-intervention-deroule.png)
+
+Les fiches sont des procédures **types** : dans une usine, elles seraient remplacées par celles de l'entreprise. Pour les modifier, il suffit d'éditer les fichiers Markdown, sans programmation. Détails : [INTERVENTION_GUIDEE.md](INTERVENTION_GUIDEE.md).
+
+## 6. Analyse d'un lot (F14)
 
 On importe un fichier CSV contenant un relevé par machine. Les colonnes attendues sont `gamme`, `temp_air`, `temp_process`, `vitesse`, `couple` et `usure_outil` ; les noms d'origine du jeu AI4I 2020 sont aussi acceptés. Un **modèle de fichier** est téléchargeable, et un **échantillon de démonstration** de 200 relevés permet d'essayer sans fichier.
 
@@ -73,7 +98,7 @@ Les machines sont classées de la plus à la moins risquée, avec leur niveau, l
 
 Le fichier importé est vérifié. En cas de colonne manquante, de gamme inconnue ou de valeur non numérique, un message clair s'affiche à la place des résultats.
 
-## 6. Simulation (F15)
+## 7. Simulation (F15)
 
 On part d'une machine, on choisit une mesure, et la courbe montre l'évolution du risque sur toute la plage de cette mesure.
 
@@ -83,7 +108,7 @@ On part d'une machine, on choisit une mesure, et la courbe montre l'évolution d
 - Pour l'usure de l'outil, une **bande orange** marque la zone d'usure à risque, à partir de 200 minutes.
 - L'application indique à partir de quelle valeur le seuil d'alerte serait atteint.
 
-## 7. Économie (F16)
+## 8. Économie (F16)
 
 Toutes les **hypothèses de coût** se modifient dans le menu de gauche : durée et coût d'un arrêt, réparation, pièce rebutée, intervention préventive, fausse alerte, coût de la solution et volume annuel. Le **seuil d'alerte** se règle avec un curseur.
 
@@ -98,17 +123,17 @@ Les résultats se recalculent instantanément :
 
 Avec les hypothèses par défaut, le gain est de **510 000 € par an**, soit une réduction de 73 %.
 
-## 8. À propos (F17)
+## 9. À propos (F17)
 
 Cette page présente le projet, les performances du modèle sur des données jamais vues, la source et la licence des données, les limites, et l'auteur.
 
 ![À propos](figures/app-6-a-propos.png)
 
-## 9. Vérifications réalisées
+## 10. Vérifications réalisées
 
 L'application a été testée automatiquement dans un navigateur :
 
-- chacune des 5 pages s'ouvre ;
+- chacune des 6 pages s'ouvre ;
 - l'exemple « surcharge » s'applique correctement ;
 - aucune page n'affiche d'erreur.
 
@@ -116,22 +141,24 @@ L'application a été testée automatiquement dans un navigateur :
 |---|---|
 | Diagnostic d'une machine normale | Risque de 0 %, pas d'alerte, aucune mesure en cause |
 | Diagnostic de l'exemple « surcharge » | Risque de 96 %, alerte critique, panne de surcharge, action affichée |
+| Intervention guidée depuis l'exemple « surcharge » | Fiche PROC-OSF proposée, suite verrouillée avant la consignation, 27 étapes, compte rendu téléchargé |
 | Analyse de l'échantillon de démonstration | 200 machines classées, 7 alertes, 11 outils à changer par précaution |
 | Simulation de l'usure | Risque faible jusqu'à 200 min, puis remontée dans la zone d'usure |
 | Économie aux hypothèses par défaut | 697 000 € sans le modèle, 187 000 € avec, soit 510 000 € de gain (identique à l'étape 4) |
 | À propos | Performances conformes au rapport de l'étape 3 |
 
-## 10. Limites
+## 11. Limites
 
 - Les **données sont synthétiques** : sur une vraie usine, il faudrait réentraîner le modèle sur ses propres relevés.
 - L'application analyse des **relevés ponctuels**, pas un flux en temps réel venant des machines (évolution possible, voir le § 13 du cahier des charges).
 - Les **coûts** de la page Économie sont des hypothèses, à remplacer par les chiffres réels de l'usine.
 
-## 11. Fichiers
+## 12. Fichiers
 
 | Fichier | Rôle |
 |---|---|
-| `app/app.py` | L'application Streamlit (5 pages) |
+| `app/app.py` | L'application Streamlit (6 pages) |
 | `.streamlit/config.toml` | Thème aux couleurs du projet (bleu marine) |
 | `src/donnees.py`, `src/explication.py`, `src/economie.py` | Code partagé avec les étapes 3 et 4 |
 | `models/predimaint.joblib` | Le modèle entraîné |
+| `data/procedures/`, `src/procedures.py` | Fiches de procédures et intervention guidée |

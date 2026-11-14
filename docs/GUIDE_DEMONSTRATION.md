@@ -11,13 +11,14 @@
 3. Comprendre ce que l'on voit
 4. Tests du diagnostic : 10 machines à essayer
 5. Simulations : 6 expériences
-6. Tests de l'analyse de lot : 5 fichiers fournis
-7. Scénarios économiques
-8. Script de démonstration en 10 minutes
-9. Questions d'entretien et réponses
-10. Limites et pistes d'amélioration
-11. Glossaire
-12. Fiche de test à cocher
+6. Intervention guidée : 5 scénarios
+7. Tests de l'analyse de lot : 5 fichiers fournis
+8. Scénarios économiques
+9. Script de démonstration en 10 minutes
+10. Questions d'entretien et réponses
+11. Limites et pistes d'amélioration
+12. Glossaire
+13. Fiche de test à cocher
 
 ---
 
@@ -55,7 +56,7 @@
 
 **Sans installation** : l'application est aussi en ligne, à l'adresse **https://predimaint.streamlit.app**, accessible depuis n'importe quel ordinateur ou téléphone. C'est la solution la plus simple pour une démonstration en entretien.
 
-**Le menu de gauche** donne accès aux 5 pages : Diagnostic d'une machine, Analyse d'un lot, Simulation, Économie, À propos.
+**Le menu de gauche** donne accès aux 6 pages : Diagnostic d'une machine, Analyse d'un lot, Intervention guidée, Simulation, Économie, À propos.
 
 ---
 
@@ -155,7 +156,35 @@ Pour chaque mesure, l'application la remplace par sa **valeur habituelle sur une
 
 ---
 
-## 6. Tests de l'analyse de lot : 5 fichiers fournis
+## 6. Intervention guidée : 5 scénarios
+
+**Mode opératoire** : sur la page **Diagnostic d'une machine**, saisir la machine, puis cliquer sur **« Lancer l'intervention guidée »**. Le bouton n'apparaît qu'en cas d'alerte ou d'outil en zone d'usure. On peut aussi ouvrir la page **Intervention guidée** depuis le menu et saisir la machine directement.
+
+| N° | Machine (voir § 4) | Fiche proposée | Raison affichée | Étapes au total |
+|---|---|---|---|---|
+| I1 | D2, outil usé et effort élevé | PROC-OSF — Panne de surcharge | type de panne prédit par le modèle | 27 |
+| I2 | D3, refroidissement insuffisant | PROC-HDF — Panne de dissipation de chaleur | type de panne prédit par le modèle | 27 |
+| I3 | D4, vitesse très élevée et couple faible | PROC-PWF — Panne de puissance | type de panne prédit par le modèle | 25 |
+| I4 | D6, outil à 215 min sans alerte | PROC-TWF — Changement préventif de l'outil | usure de l'outil ≥ 200 min (règle préventive) | 25 |
+| I5 | D1, machine normale (depuis le menu) | Aucune : « Aucune intervention n'est nécessaire » | — | 25 si l'on active « Réaliser quand même une intervention » (PROC-RNF) |
+
+Le total compte toujours les fiches SEC-01 (8 étapes), SEC-02 (4) et CTRL-01 (7), plus la fiche d'intervention.
+
+**Ce qu'il faut vérifier à chaque fois**
+
+1. Le déroulé suit toujours l'ordre **SEC-01 consignation → SEC-02 protections → fiche d'intervention → CTRL-01 remise en service**.
+2. Tant que les **8 étapes de consignation** ne sont pas cochées, la suite reste masquée, avec le message « 🔒 Les étapes suivantes s'affichent une fois la consignation (SEC-01) entièrement validée ».
+3. La barre d'avancement progresse ; à 100 %, le message « ✅ Intervention terminée » apparaît.
+4. Le bouton **« Télécharger le compte rendu »** produit un fichier `.md` avec la date, le technicien, la machine, le diagnostic, chaque étape cochée ou non, et les observations. S'il reste des étapes non cochées, le compte rendu l'indique : « intervention incomplète ».
+5. On peut changer de fiche avec la liste « Fiche à suivre ». Les cases cochées repartent alors de zéro.
+
+**Le cas à commenter en entretien** : la machine **D8** (gamme H, fausse alerte à 53 %) propose PROC-PWF. Le technicien, en suivant la fiche, contrôlerait la puissance (8 796 W, dans la plage) et constaterait qu'il n'y a pas de défaut. C'est exactement le rôle de l'étape de **vérification** : la procédure protège aussi contre les erreurs du modèle.
+
+**Message clé** : le modèle dit **quoi** ; l'intervention guidée dit **comment, en sécurité**, et garde une **trace** de ce qui a été fait.
+
+---
+
+## 7. Tests de l'analyse de lot : 5 fichiers fournis
 
 Les fichiers sont dans le dossier `data/exemples/` du projet.
 
@@ -177,7 +206,7 @@ Les fichiers sont dans le dossier `data/exemples/` du projet.
 
 ---
 
-## 7. Scénarios économiques
+## 8. Scénarios économiques
 
 **Mode opératoire** : page **Économie**. Les hypothèses se modifient dans le menu de gauche, et le seuil avec le curseur.
 
@@ -207,23 +236,24 @@ Les fichiers sont dans le dossier `data/exemples/` du projet.
 
 ---
 
-## 8. Script de démonstration en 10 minutes
+## 9. Script de démonstration en 10 minutes
 
 | Temps | Page | Ce qu'on fait | Ce qu'on dit |
 |---|---|---|---|
 | 0:00 – 1:00 | — | Présenter le problème | Le pitch du § 1 : pannes imprévues, coûts, capteurs déjà présents |
-| 1:00 – 3:00 | Diagnostic | Charger l'exemple **surcharge** (D2) | « 96 % de risque, panne de surcharge. Le modèle explique : c'est l'usure **et** le couple. La contrainte dépasse la limite de la gamme L. L'action est concrète : réduire la charge et changer l'outil. » |
-| 3:00 – 4:00 | Diagnostic | Saisir **D6** (usure à 215 min) | « Pas d'alerte, mais l'outil est en zone d'usure. Le modèle ne peut pas prédire la casse d'un outil : je l'ai mesuré, et j'ai ajouté une règle préventive. Prédictif et préventif sont combinés. » |
-| 4:00 – 5:30 | Simulation | **S1** : faire varier le couple | « Le modèle a retrouvé seul les limites physiques de puissance, à 22 N·m et 57 N·m pour 1 500 tr/min. Cela montre qu'il a appris la mécanique, pas du bruit. » |
-| 5:30 – 7:00 | Analyse d'un lot | Importer `lot_format_origine_ai4i.csv` | « 20 vrais relevés : 6 pannes réelles, 6 détectées avec le bon type, aucune fausse alerte. Le responsable voit d'abord les machines à traiter. » |
-| 7:00 – 9:00 | Économie | E1, puis E2 | « 510 000 € de gain par an. Même si une panne ne coûtait que 500 €, on gagnerait encore 60 000 €. Et le seuil a été choisi pour éviter de noyer les techniciens sous les fausses alertes. » |
-| 9:00 – 10:00 | À propos | Montrer les limites | « Données synthétiques, donc performances optimistes. Sur une vraie usine, je réentraînerais le modèle sur ses données. J'ai aussi trouvé une fausse alerte en testant la gamme H : l'outil aide le technicien, il ne le remplace pas. » |
+| 1:00 – 2:30 | Diagnostic | Charger l'exemple **surcharge** (D2) | « 96 % de risque, panne de surcharge. Le modèle explique : c'est l'usure **et** le couple. La contrainte dépasse la limite de la gamme L. » |
+| 2:30 – 4:00 | Intervention guidée | Cliquer sur **« Lancer l'intervention guidée »** (I1) | « Le technicien passe directement à la procédure. La consignation vient d'abord : tant qu'elle n'est pas validée, la suite reste verrouillée. À la fin, un compte rendu est généré pour la traçabilité. » |
+| 4:00 – 4:45 | Diagnostic | Saisir **D6** (usure à 215 min) | « Pas d'alerte, mais l'outil est en zone d'usure : la règle préventive propose le changement d'outil. Prédictif et préventif sont combinés. » |
+| 4:45 – 6:00 | Simulation | **S1** : faire varier le couple | « Le modèle a retrouvé seul les limites physiques de puissance, à 22 N·m et 57 N·m pour 1 500 tr/min. Il a appris la mécanique, pas du bruit. » |
+| 6:00 – 7:15 | Analyse d'un lot | Importer `lot_format_origine_ai4i.csv` | « 20 vrais relevés : 6 pannes réelles, 6 détectées avec le bon type, aucune fausse alerte. » |
+| 7:15 – 9:00 | Économie | E1, puis E2 | « 510 000 € de gain par an. Même si une panne ne coûtait que 500 €, on gagnerait encore 60 000 €. Le seuil évite de noyer les techniciens sous les fausses alertes. » |
+| 9:00 – 10:00 | À propos | Montrer les limites | « Données synthétiques, donc performances optimistes. J'ai trouvé une fausse alerte en testant la gamme H : la vérification prévue dans la procédure la rattrape. L'outil aide le technicien, il ne le remplace pas. » |
 
 **Conseil** : finir sur les limites montre de la maturité. Un recruteur se méfie d'un projet « parfait ».
 
 ---
 
-## 9. Questions d'entretien et réponses
+## 10. Questions d'entretien et réponses
 
 **1. Pourquoi ne pas mesurer la performance avec le taux de bonnes réponses ?**
 Parce que 96,6 % des relevés sont sans panne. Un modèle qui répondrait toujours « pas de panne » aurait 96,6 % de bonnes réponses tout en étant inutile. J'ai donc mesuré le **rappel**, c'est-à-dire la part des pannes détectées, et la **précision**, c'est-à-dire la part des alertes justifiées.
@@ -264,12 +294,15 @@ Oui. Il manque environ 15 % des pannes, surtout des casses d'outil. Et en testan
 **11. Combien de temps vous a pris ce projet, et avec quels outils ?**
 Environ deux semaines à temps partiel, en suivant un cahier des charges que j'ai rédigé au départ. Outils : Python, pandas, scikit-learn, Matplotlib, Altair et Streamlit. Le code, la documentation et l'application sont publiés.
 
-**12. Que feriez-vous ensuite ?**
-Ajouter un assistant IA qui guide le technicien pas à pas selon la panne prédite. Travailler sur des séries temporelles pour estimer la durée de vie restante d'un outil. Ajouter des alertes automatiques.
+**12. Comment le technicien passe-t-il de l'alerte à l'action ?**
+Par l'intervention guidée. La panne prédite désigne une fiche de procédure, et l'application la déroule dans un ordre fixe : consignation, protections, intervention, remise en service. Les étapes d'intervention restent verrouillées tant que la consignation n'est pas validée, et un compte rendu est généré à la fin. Je l'ai fait sans modèle de langage, donc sans coût et sans risque de réponse inventée. Les fiches serviront de base au futur assistant IA.
+
+**13. Que feriez-vous ensuite ?**
+Ajouter un assistant IA conversationnel qui s'appuie sur les fiches de procédures existantes pour répondre aux questions du technicien. Travailler sur des séries temporelles pour estimer la durée de vie restante d'un outil. Ajouter des alertes automatiques.
 
 ---
 
-## 10. Limites et pistes d'amélioration
+## 11. Limites et pistes d'amélioration
 
 | Limite | Conséquence | Piste d'amélioration |
 |---|---|---|
@@ -283,7 +316,7 @@ Ajouter un assistant IA qui guide le technicien pas à pas selon la panne prédi
 
 ---
 
-## 11. Glossaire
+## 12. Glossaire
 
 | Terme | Définition simple |
 |---|---|
@@ -304,11 +337,11 @@ Ajouter un assistant IA qui guide le technicien pas à pas selon la panne prédi
 
 ---
 
-## 12. Fiche de test à cocher
+## 13. Fiche de test à cocher
 
 À faire avant chaque démonstration, en moins de 15 minutes.
 
-- [ ] L'application se lance et les 5 pages s'ouvrent sans erreur
+- [ ] L'application se lance et les 6 pages s'ouvrent sans erreur
 - [ ] D1 : 0 %, pas d'alerte
 - [ ] D2 : 96 %, critique, surcharge, zone d'usure signalée
 - [ ] D3 : 92 %, dissipation de chaleur
@@ -317,6 +350,11 @@ Ajouter un assistant IA qui guide le technicien pas à pas selon la panne prédi
 - [ ] D9 et D10 : 90 % puis 0,3 %
 - [ ] S1 : alerte jusqu'à 21,8 N·m et à partir de 57,4 N·m
 - [ ] S3 : alerte à partir d'environ 199 min
+- [ ] I1 : bouton « Lancer l'intervention guidée », fiche PROC-OSF, 27 étapes
+- [ ] I1 : suite verrouillée tant que la consignation n'est pas cochée
+- [ ] I1 : compte rendu téléchargé, avancement correct
+- [ ] I4 : D6 propose PROC-TWF (règle des 200 min)
+- [ ] I5 : D1 n'impose aucune intervention
 - [ ] Lot `lot_atelier_10_machines.csv` : 10 machines, 7 alertes
 - [ ] Lot `lot_format_origine_ai4i.csv` : 6 alertes, qui correspondent aux 6 vraies pannes
 - [ ] Les 3 fichiers d'erreur affichent leur message
