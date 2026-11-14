@@ -74,7 +74,7 @@ En complément, l'application a été testée **dans un navigateur**, automatiqu
 | L2 | Exploration des données | `Etape 2 - Exploration des donnees - PrediMaint.pdf` et notebook |
 | L3 | Modèle et rapport de performances | `Etape 3 - Resultats du modele - PrediMaint.pdf` (et version Word) |
 | L4 | Étude économique | `Etape 4 - Etude economique - PrediMaint.pdf` |
-| L5 | Application | `Etape 5 - Application - PrediMaint.pdf` et application en ligne |
+| L5 | Application | `Manuel d'utilisation - PrediMaint.pdf` et application en ligne |
 | L6 | Dépôt GitHub documenté | README et ce document |
 | L7 | Portfolio et LinkedIn | Carte projet en ligne, textes LinkedIn |
 | — | Guide de démonstration et de test | `Guide de demonstration et de test - PrediMaint.pdf` |

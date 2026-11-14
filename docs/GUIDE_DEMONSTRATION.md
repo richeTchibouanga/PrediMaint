@@ -12,13 +12,14 @@
 4. Tests du diagnostic : 10 machines à essayer
 5. Simulations : 6 expériences
 6. Intervention guidée : 5 scénarios
-7. Tests de l'analyse de lot : 5 fichiers fournis
-8. Scénarios économiques
-9. Script de démonstration en 10 minutes
-10. Questions d'entretien et réponses
-11. Limites et pistes d'amélioration
-12. Glossaire
-13. Fiche de test à cocher
+7. Import de relevés (CSV) : 7 fichiers fournis
+8. Surveillance en continu : 5 observations
+9. Scénarios économiques
+10. Script de démonstration en 10 minutes
+11. Questions d'entretien et réponses
+12. Limites et pistes d'amélioration
+13. Glossaire
+14. Fiche de test à cocher
 
 ---
 
@@ -56,7 +57,7 @@
 
 **Sans installation** : l'application est aussi en ligne, à l'adresse **https://predimaint.streamlit.app**, accessible depuis n'importe quel ordinateur ou téléphone. C'est la solution la plus simple pour une démonstration en entretien.
 
-**Le menu de gauche** donne accès aux 6 pages : Diagnostic d'une machine, Analyse d'un lot, Intervention guidée, Simulation, Économie, À propos.
+**Le menu de gauche** donne accès aux 7 pages : Diagnostic d'une machine, Analyse d'un lot, Intervention guidée, Surveillance en continu, Simulation, Économie, À propos.
 
 ---
 
@@ -184,7 +185,7 @@ Le total compte toujours les fiches SEC-01 (8 étapes), SEC-02 (4) et CTRL-01 (7
 
 ---
 
-## 7. Tests de l'analyse de lot : 5 fichiers fournis
+## 7. Import de relevés (CSV) : 7 fichiers fournis
 
 Les fichiers sont dans le dossier `data/exemples/` du projet.
 
@@ -194,19 +195,40 @@ Les fichiers sont dans le dossier `data/exemples/` du projet.
 |---|---|---|
 | `lot_atelier_10_machines.csv` | Les 10 machines du § 4, numérotées M01 à M10 | 10 machines, **7 alertes**. M02 en tête (96 %), M06 sans alerte mais avec « Zone d'usure : changer l'outil par précaution » |
 | `lot_format_origine_ai4i.csv` | 20 vrais relevés du jeu de test, au format d'origine, avec la vraie colonne de panne | 20 machines, **6 alertes**, qui correspondent aux **6 vraies pannes**. Les 6 types prédits sont corrects (3 chaleur, 2 puissance, 1 surcharge) et il n'y a aucune fausse alerte |
+| `lot_excel_francais.csv` | 2 machines, enregistrées comme par Excel en français (points-virgules, `300,5`) | Lu sans erreur : 2 machines, **1 alerte** (M02, surcharge) |
+| `erreur_temperature_celsius.csv` | Le lot atelier, avec les températures de M04 saisies en °C (26 et 36,5) | **M04 en tête, « Mesures à vérifier »**, avec la mesure fautive ; avertissement au-dessus du tableau ; 6 alertes pour les autres machines |
 | `erreur_colonne_manquante.csv` | La colonne `couple` a été retirée | Message « Colonnes manquantes : couple » |
 | `erreur_gamme_inconnue.csv` | Une gamme vaut « X » | Message « La colonne « gamme » ne doit contenir que L, M ou H. » |
 | `erreur_valeur_non_numerique.csv` | Un couple vaut « abc » | Message « Certaines mesures sont vides ou ne sont pas des nombres. » |
 
 **Échantillon de démonstration** (interrupteur activé, sans fichier) : 200 machines analysées, **7 alertes** et **11 outils à changer par précaution**.
 
+Dans chaque résultat, l'**identifiant de la machine** apparaît en première colonne. Le bouton **« Télécharger les résultats »** produit un fichier qui s'ouvre directement dans Excel en français. Le mode d'emploi complet de l'import (préparer le fichier dans Excel, colonnes, unités, erreurs) est dans le **manuel d'utilisation**, § 6.
+
 **À montrer en entretien** :
 - le fichier au format d'origine, où l'on compare directement la colonne `panne` (la réalité) à la prédiction ;
+- `erreur_temperature_celsius.csv` : une température en °C au lieu de kelvins donnait auparavant un faux « Pas d'alerte ». L'application **contrôle maintenant les plages** et demande de vérifier le relevé. C'est un bon exemple de pensée « terrain » : prévoir les erreurs de saisie réelles ;
 - un fichier erroné, pour montrer que l'outil **contrôle les données** avant de calculer, au lieu de produire un résultat faux.
 
 ---
 
-## 8. Scénarios économiques
+## 8. Surveillance en continu : 5 observations
+
+**Mode opératoire** : page **Surveillance en continu**, cliquer sur **« Démarrer »**. Trois machines reçoivent chacune un nouveau relevé toutes les secondes, sans aucune saisie. Ce sont des relevés réels du jeu de test, rejoués dans leur ordre d'origine.
+
+| N° | Ce qu'on observe | Ce qu'il faut en dire |
+|---|---|---|
+| V1 | Les relevés défilent seuls ; les courbes de risque se dessinent | « Dans une usine, ces mesures viendraient des capteurs. Personne ne saisit rien : le technicien ne reçoit que les alertes. » |
+| V2 | **Machine 1, relevé 18** : alerte critique à 73 %, panne de surcharge, outil à 202 min ; une croix rouge confirme une vraie panne | Le modèle et la règle des 200 min signalent le problème en même temps |
+| V3 | **Machine 2, relevé 12** : alerte à 91 % (chaleur), **sans croix rouge** | C'est une **fausse alerte** : le journal l'indique honnêtement |
+| V4 | Fin de la simulation (90 relevés) : « **7 pannes réelles détectées sur 7, 3 fausses alertes** » ; 10 lignes au journal | Toutes les pannes ont été vues, au prix de quelques fausses alertes |
+| V5 | **Pause** au relevé 18, puis « Lancer l'intervention guidée pour cette machine » (Machine 1) | L'intervention s'ouvre avec la fiche **PROC-OSF** : la chaîne est complète, de la mesure à l'action |
+
+**La limite à dire soi-même** : dans ce jeu de données, chaque relevé est indépendant, sans dégradation progressive. L'alerte arrive donc au relevé où les conditions de panne sont réunies, juste **avant de lancer l'opération à risque**, et non plusieurs heures à l'avance. Prévoir une panne longtemps à l'avance demanderait des mesures suivies dans le temps (modèle de durée de vie restante).
+
+---
+
+## 9. Scénarios économiques
 
 **Mode opératoire** : page **Économie**. Les hypothèses se modifient dans le menu de gauche, et le seuil avec le curseur.
 
@@ -236,7 +258,7 @@ Les fichiers sont dans le dossier `data/exemples/` du projet.
 
 ---
 
-## 9. Script de démonstration en 10 minutes
+## 10. Script de démonstration en 10 minutes
 
 | Temps | Page | Ce qu'on fait | Ce qu'on dit |
 |---|---|---|---|
@@ -245,15 +267,16 @@ Les fichiers sont dans le dossier `data/exemples/` du projet.
 | 2:30 – 4:00 | Intervention guidée | Cliquer sur **« Lancer l'intervention guidée »** (I1) | « Le technicien passe directement à la procédure. La consignation vient d'abord : tant qu'elle n'est pas validée, la suite reste verrouillée. À la fin, un compte rendu est généré pour la traçabilité. » |
 | 4:00 – 4:45 | Diagnostic | Saisir **D6** (usure à 215 min) | « Pas d'alerte, mais l'outil est en zone d'usure : la règle préventive propose le changement d'outil. Prédictif et préventif sont combinés. » |
 | 4:45 – 6:00 | Simulation | **S1** : faire varier le couple | « Le modèle a retrouvé seul les limites physiques de puissance, à 22 N·m et 57 N·m pour 1 500 tr/min. Il a appris la mécanique, pas du bruit. » |
-| 6:00 – 7:15 | Analyse d'un lot | Importer `lot_format_origine_ai4i.csv` | « 20 vrais relevés : 6 pannes réelles, 6 détectées avec le bon type, aucune fausse alerte. » |
-| 7:15 – 9:00 | Économie | E1, puis E2 | « 510 000 € de gain par an. Même si une panne ne coûtait que 500 €, on gagnerait encore 60 000 €. Le seuil évite de noyer les techniciens sous les fausses alertes. » |
-| 9:00 – 10:00 | À propos | Montrer les limites | « Données synthétiques, donc performances optimistes. J'ai trouvé une fausse alerte en testant la gamme H : la vérification prévue dans la procédure la rattrape. L'outil aide le technicien, il ne le remplace pas. » |
+| 6:00 – 7:00 | Analyse d'un lot | Importer `lot_format_origine_ai4i.csv`, puis `erreur_temperature_celsius.csv` | « Une usine peut déjà exporter ses relevés en CSV et les analyser d'un coup. 6 vraies pannes, 6 détectées. Et une température saisie en °C n'est pas analysée en silence : l'outil demande de la vérifier. » |
+| 7:00 – 8:15 | Surveillance en continu | **Démarrer**, montrer V2 puis le bilan V4 | « Voilà comment ça fonctionnerait branché sur les capteurs : aucune saisie, une alerte dès qu'une machine passe le seuil. 7 pannes sur 7 détectées. » |
+| 8:15 – 9:15 | Économie | E1, puis E2 | « 510 000 € de gain par an. Même si une panne ne coûtait que 500 €, on gagnerait encore 60 000 €. » |
+| 9:15 – 10:00 | À propos | Montrer les limites | « Données synthétiques, donc performances optimistes. Pas encore de prévision longtemps à l'avance : il faudrait suivre les mesures dans le temps. J'ai trouvé une fausse alerte en testant la gamme H : la vérification prévue dans la procédure la rattrape. » |
 
 **Conseil** : finir sur les limites montre de la maturité. Un recruteur se méfie d'un projet « parfait ».
 
 ---
 
-## 10. Questions d'entretien et réponses
+## 11. Questions d'entretien et réponses
 
 **1. Pourquoi ne pas mesurer la performance avec le taux de bonnes réponses ?**
 Parce que 96,6 % des relevés sont sans panne. Un modèle qui répondrait toujours « pas de panne » aurait 96,6 % de bonnes réponses tout en étant inutile. J'ai donc mesuré le **rappel**, c'est-à-dire la part des pannes détectées, et la **précision**, c'est-à-dire la part des alertes justifiées.
@@ -297,12 +320,24 @@ Environ deux semaines à temps partiel, en suivant un cahier des charges que j'a
 **12. Comment le technicien passe-t-il de l'alerte à l'action ?**
 Par l'intervention guidée. La panne prédite désigne une fiche de procédure, et l'application la déroule dans un ordre fixe : consignation, protections, intervention, remise en service. Les étapes d'intervention restent verrouillées tant que la consignation n'est pas validée, et un compte rendu est généré à la fin. Je l'ai fait sans modèle de langage, donc sans coût et sans risque de réponse inventée. Les fiches serviront de base au futur assistant IA.
 
-**13. Que feriez-vous ensuite ?**
-Ajouter un assistant IA conversationnel qui s'appuie sur les fiches de procédures existantes pour répondre aux questions du technicien. Travailler sur des séries temporelles pour estimer la durée de vie restante d'un outil. Ajouter des alertes automatiques.
+**13. D'où viennent les données ?**
+Pour apprendre, le modèle a utilisé 10 000 relevés de machines-outils (AI4I 2020), dont on connaît à la fois les mesures et ce qui s'est passé ensuite. Pour diagnostiquer, l'application reçoit les mesures d'une machine : saisies, importées en CSV ou, en simulation, en flux continu. Dans une usine, elles viendraient des capteurs : sondes de température, codeur de broche, couple calculé par le variateur, compteur de temps de coupe de la commande numérique. Une passerelle IoT les transmettrait automatiquement.
+
+**14. Sans un opérateur qui saisit les mesures, l'application fonctionne-t-elle ?**
+Sans mesures, aucune maintenance prédictive ne fonctionne : il faut des données. Mais la saisie n'est qu'un mode de démonstration. La page Surveillance en continu montre le fonctionnement cible : les relevés arrivent seuls et le technicien ne reçoit que les alertes. Une étape intermédiaire réaliste, sans développement, consiste à exporter chaque jour les relevés des commandes numériques en CSV et à les importer.
+
+**15. Comment l'application sait-elle qu'une pièce doit être changée ?**
+Elle ne voit pas la pièce : elle raisonne sur les mesures. Le modèle calcule un risque et désigne le type de panne. Par exemple, une surcharge, c'est-à-dire une usure trop grande pour l'effort de coupe, mène à changer l'outil. S'y ajoute une règle préventive : à 200 minutes d'usure, on change l'outil par précaution. Aujourd'hui, seul l'outil de coupe est suivi. Pour un roulement ou un moteur, il faudrait des capteurs de vibrations ou de courant et leur historique de pannes.
+
+**16. Comment évaluez-vous l'urgence ?**
+Par niveaux : sous 26 % de risque, pas d'alerte ; de 26 à 60 %, intervention à planifier ; au-delà de 60 %, intervention rapide ; et la zone d'usure à 200 minutes. La limite, c'est que l'outil juge l'état actuel, pas le temps restant avant la panne. Pour dire « panne probable dans 30 heures », il faudrait suivre les mesures dans le temps et entraîner un modèle de durée de vie restante (RUL).
+
+**17. Que feriez-vous ensuite ?**
+Ajouter un assistant IA conversationnel qui s'appuie sur les fiches de procédures existantes pour répondre aux questions du technicien. Brancher l'application sur de vrais capteurs (passerelle IoT) avec des alertes automatiques. Travailler sur des séries temporelles pour estimer la durée de vie restante d'un outil.
 
 ---
 
-## 11. Limites et pistes d'amélioration
+## 12. Limites et pistes d'amélioration
 
 | Limite | Conséquence | Piste d'amélioration |
 |---|---|---|
@@ -311,12 +346,13 @@ Ajouter un assistant IA conversationnel qui s'appuie sur les fiches de procédur
 | Pannes aléatoires | Impossibles à anticiper | À traiter par la maintenance corrective |
 | Peu d'exemples à très haute vitesse | Modèle hésitant (S6) | Collecter plus de données dans ces conditions |
 | Erreurs près des frontières de panne | Fausse alerte (D8) | Plus de données, et l'explication pour garder l'esprit critique |
-| Relevés ponctuels | Pas de surveillance continue | Connexion aux capteurs en temps réel et alertes automatiques |
+| Pas de connexion aux machines | Mesures saisies, importées en CSV ou simulées | Passerelle IoT vers les capteurs, alertes automatiques (le fonctionnement est montré par la page Surveillance en continu) |
+| Pas de prévision à long terme | L'alerte arrive quand les conditions de panne sont réunies | Suivre les mesures dans le temps, modèle de durée de vie restante (RUL) |
 | Coûts estimés | Gain chiffré indicatif | Utiliser les coûts réels de l'usine |
 
 ---
 
-## 12. Glossaire
+## 13. Glossaire
 
 | Terme | Définition simple |
 |---|---|
@@ -337,11 +373,11 @@ Ajouter un assistant IA conversationnel qui s'appuie sur les fiches de procédur
 
 ---
 
-## 13. Fiche de test à cocher
+## 14. Fiche de test à cocher
 
 À faire avant chaque démonstration, en moins de 15 minutes.
 
-- [ ] L'application se lance et les 6 pages s'ouvrent sans erreur
+- [ ] L'application se lance et les 7 pages s'ouvrent sans erreur
 - [ ] D1 : 0 %, pas d'alerte
 - [ ] D2 : 96 %, critique, surcharge, zone d'usure signalée
 - [ ] D3 : 92 %, dissipation de chaleur
@@ -357,6 +393,11 @@ Ajouter un assistant IA conversationnel qui s'appuie sur les fiches de procédur
 - [ ] I5 : D1 n'impose aucune intervention
 - [ ] Lot `lot_atelier_10_machines.csv` : 10 machines, 7 alertes
 - [ ] Lot `lot_format_origine_ai4i.csv` : 6 alertes, qui correspondent aux 6 vraies pannes
+- [ ] Lot `lot_excel_francais.csv` : lu sans erreur, 1 alerte
+- [ ] Lot `erreur_temperature_celsius.csv` : M04 en tête, « Mesures à vérifier »
 - [ ] Les 3 fichiers d'erreur affichent leur message
+- [ ] Surveillance : les relevés défilent après « Démarrer »
+- [ ] Surveillance : bilan final « 7 pannes réelles détectées sur 7, 3 fausses alertes »
+- [ ] Surveillance : pause au relevé 18, intervention guidée PROC-OSF pour la Machine 1
 - [ ] Économie E1 : 510 000 € de gain
 - [ ] Économie E2 : 60 500 € de gain

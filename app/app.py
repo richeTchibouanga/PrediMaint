@@ -20,9 +20,11 @@ sys.path.insert(0, str(RACINE))
 from src.donnees import CAPTEURS, PLAGES, ajouter_variables, charger, separer  # noqa: E402
 from src.economie import Hypotheses, bilan, courbe_couts  # noqa: E402
 from src.explication import LIBELLES, expliquer, type_probable  # noqa: E402
-from src.lot import ZONE_USURE, analyser_lot, lire_csv  # noqa: E402
+from src.lot import NIVEAU_A_VERIFIER, ZONE_USURE, analyser_lot, lire_csv  # noqa: E402
 from src.donnees import NOMS_MODES  # noqa: E402
 from src.procedures import FICHE_PAR_TYPE, charger_fiches, choisir_fiche, compte_rendu, deroule  # noqa: E402
+from src.surveillance import bilan as bilan_surveillance  # noqa: E402
+from src.surveillance import flux_de_test, machines  # noqa: E402
 from src.lot import niveau as niveau_texte  # noqa: E402
 
 st.set_page_config(page_title="PrédiMaint — Atelier d'usinage", page_icon="🏭", layout="wide")
@@ -74,6 +76,11 @@ def pct(x: float) -> str:
 
 def euros(x: float) -> str:
     return f"{x:,.0f} €".replace(",", " ")
+
+
+def csv_excel(df: pd.DataFrame) -> bytes:
+    """CSV lisible directement par Excel en français : point-virgule, virgule décimale, UTF-8 avec BOM."""
+    return df.to_csv(index=False, sep=";", decimal=",").encode("utf-8-sig")
 
 
 def badge(texte: str, couleur: str) -> None:
@@ -205,13 +212,19 @@ def page_lot():
     st.title("📋 Analyse d'un lot de machines")
     st.caption("Importez un fichier CSV de relevés : chaque machine est évaluée et la liste est classée "
                "de la plus à la moins risquée.")
-    modele_csv = pd.DataFrame([{"gamme": "L", "temp_air": 300.0, "temp_process": 310.0, "vitesse": 1500,
-                                "couple": 40.0, "usure_outil": 100}])
+    modele_csv = pd.DataFrame([
+        {"machine": "M01", "gamme": "L", "temp_air": 300.0, "temp_process": 310.0, "vitesse": 1500, "couple": 40.0,
+         "usure_outil": 100},
+        {"machine": "M02", "gamme": "M", "temp_air": 301.5, "temp_process": 311.0, "vitesse": 1420, "couple": 48.5,
+         "usure_outil": 160},
+    ])
     c1, c2 = st.columns([3, 1])
     fichier = c1.file_uploader("Fichier CSV (colonnes : gamme, temp_air, temp_process, vitesse, couple, "
-                               "usure_outil — ou les noms d'origine du jeu AI4I 2020)", type="csv")
-    c2.download_button("Télécharger un modèle de fichier", modele_csv.to_csv(index=False).encode("utf-8"),
-                       "modele_releves.csv", "text/csv")
+                               "usure_outil — ou les noms d'origine du jeu AI4I 2020). Point-virgule ou virgule, "
+                               "décimales avec virgule ou point : un fichier enregistré par Excel convient.",
+                               type="csv")
+    c2.download_button("Télécharger un modèle de fichier", csv_excel(modele_csv), "modele_releves.csv", "text/csv",
+                       help="Fichier prêt à remplir dans Excel (une ligne par machine).")
     demo = st.toggle("Utiliser un échantillon de démonstration (200 relevés du jeu de test)", value=fichier is None)
 
     try:
@@ -230,24 +243,31 @@ def page_lot():
     res = analyser_lot(lot, MODELE, MODELE_TYPE, ENTREES, SEUIL)
     n_alerte = int((res["risque"] >= SEUIL).sum())
     n_usure = int(((res["usure_outil"] >= ZONE_USURE) & (res["risque"] < SEUIL)).sum())
-    a, b, c = st.columns(3)
+    n_verif = int((res["niveau"] == NIVEAU_A_VERIFIER).sum())
+    a, b, c, d = st.columns(4)
     a.metric("Machines analysées", len(res))
     b.metric("Alertes", n_alerte, help=f"Risque supérieur ou égal à {pct(SEUIL)}")
     c.metric("Outils à changer par précaution", n_usure, help=f"Usure ≥ {ZONE_USURE} min sans alerte du modèle")
+    d.metric("Relevés à vérifier", n_verif, help="Mesures hors des plages connues du modèle : non analysées")
+    if n_verif:
+        st.warning(f"⚠️ **{n_verif} relevé(s) contiennent des mesures hors des plages connues du modèle.** Ils sont "
+                   "placés en tête de liste et ne sont pas analysés, car le résultat ne serait pas fiable. Erreur "
+                   "fréquente : une température en °C au lieu de kelvins (K = °C + 273,15).")
 
     filtre = st.radio("Afficher", ["Toutes les machines", "Alertes seulement", "Alertes et zone d'usure"],
                       horizontal=True)
     vue = res
+    a_verifier = res["niveau"] == NIVEAU_A_VERIFIER
     if filtre == "Alertes seulement":
-        vue = res[res["risque"] >= SEUIL]
+        vue = res[(res["risque"] >= SEUIL) | a_verifier]
     elif filtre == "Alertes et zone d'usure":
-        vue = res[(res["risque"] >= SEUIL) | (res["usure_outil"] >= ZONE_USURE)]
+        vue = res[(res["risque"] >= SEUIL) | (res["usure_outil"] >= ZONE_USURE) | a_verifier]
     st.dataframe(vue, hide_index=True, width="stretch", height=420, column_config={
         "risque": st.column_config.ProgressColumn("Risque", format="percent", min_value=0, max_value=1),
-        "niveau": "Niveau", "panne_probable": "Panne probable", "action": "Action recommandée",
+        "machine": "Machine", "niveau": "Niveau", "panne_probable": "Panne probable", "action": "Action recommandée",
         "gamme": "Gamme", "temp_air": "T. air (K)", "temp_process": "T. procédé (K)", "vitesse": "Vitesse",
         "couple": "Couple", "usure_outil": "Usure (min)"})
-    st.download_button("Télécharger les résultats (CSV)", res.to_csv(index=False).encode("utf-8-sig"),
+    st.download_button("Télécharger les résultats (CSV)", csv_excel(res),
                        "predimaint_resultats.csv", "text/csv")
 
 
@@ -505,11 +525,137 @@ def page_intervention():
         st.markdown(texte)
 
 
+# ---------------------------------------------------------------------------- Page 7 : surveillance en continu
+@st.cache_data
+def machines_simulees() -> dict:
+    return machines(flux_de_test(MODELE, MODELE_TYPE, ENTREES))
+
+
+def page_surveillance():
+    st.title("📡 Surveillance en continu (simulation)")
+    st.caption("Dans une usine, les mesures arrivent automatiquement des capteurs : personne ne les saisit. "
+               "Cette page le simule : des relevés réels défilent sur 3 machines, le modèle calcule le risque "
+               "à chaque nouveau relevé et une alerte apparaît dès qu'une machine passe le seuil.")
+    with st.expander("ℹ️ Comment fonctionne cette simulation, et ses limites"):
+        st.markdown(
+            "- **Les relevés** viennent du jeu de test AI4I 2020 (jamais vus par le modèle), rejoués dans leur "
+            "ordre d'origine. Chaque machine reçoit 30 relevés successifs.\n"
+            "- **Dans une vraie usine**, ils viendraient des capteurs via la commande numérique ou un automate, "
+            "puis une passerelle IoT ; le calcul serait identique.\n"
+            "- **La vérité terrain est connue** : une croix rouge marque chaque relevé où une panne a réellement "
+            "eu lieu, pour juger le modèle.\n"
+            "- **Limite** : dans ce jeu de données, chaque relevé est indépendant, sans dégradation progressive. "
+            "L'alerte apparaît donc au relevé où les conditions de panne sont réunies, c'est-à-dire **avant de "
+            "lancer l'opération à risque**, et non plusieurs heures à l'avance. Prévoir une panne longtemps à "
+            "l'avance demanderait des mesures suivies dans le temps (durée de vie restante).")
+
+    simu = machines_simulees()
+    total = max(len(m) for m in simu.values())
+    st.session_state.setdefault("surv_pos", 0)
+    st.session_state.setdefault("surv_marche", False)
+
+    # Les boutons agissent via on_click : l'état est mis à jour AVANT l'affichage, donc les boutons
+    # « Démarrer » et « Pause » sont toujours grisés à bon escient.
+    def demarrer():
+        if st.session_state["surv_pos"] >= total:
+            st.session_state["surv_pos"] = 0
+        st.session_state["surv_marche"] = True
+
+    def mettre_en_pause():
+        st.session_state["surv_marche"] = False
+
+    def recommencer():
+        st.session_state["surv_pos"] = 0
+        st.session_state["surv_marche"] = False
+
+    c1, c2, c3, c4 = st.columns([1, 1, 1, 2])
+    c1.button("▶️ Démarrer", on_click=demarrer, disabled=st.session_state["surv_marche"], width="stretch")
+    c2.button("⏸️ Pause", on_click=mettre_en_pause, disabled=not st.session_state["surv_marche"], width="stretch")
+    c3.button("⏮️ Recommencer", on_click=recommencer, width="stretch")
+    vitesse = c4.select_slider("Un nouveau relevé toutes les", [0.5, 1.0, 2.0, 3.0], value=1.0,
+                               format_func=lambda v: f"{v:g} s")
+
+    @st.fragment(run_every=vitesse)
+    def tableau_de_bord():
+        if st.session_state["surv_marche"]:
+            st.session_state["surv_pos"] = min(st.session_state["surv_pos"] + 1, total)
+            if st.session_state["surv_pos"] >= total:
+                st.session_state["surv_marche"] = False
+                st.rerun()  # rafraîchit aussi les boutons et la partie « Traiter une alerte »
+        pos = st.session_state["surv_pos"]
+        st.progress(pos / total, text=f"Relevé {pos} sur {total}"
+                    + (" — en cours" if st.session_state["surv_marche"] else (" — terminé" if pos == total else " — en pause")))
+        if pos == 0:
+            st.info("Cliquez sur **Démarrer** : les relevés vont arriver automatiquement.")
+            return
+
+        colonnes = st.columns(len(simu))
+        journal = []
+        for col, (nom, seg) in zip(colonnes, simu.items()):
+            vus = seg.iloc[:pos]
+            dernier = vus.iloc[-1]
+            r = float(dernier["risque"])
+            with col, st.container(border=True):
+                st.markdown(f"**{nom}**")
+                badge(niveau(r)[0], niveau(r)[1])
+                st.metric("Risque actuel", pct(r))
+                st.caption(f"Gamme {dernier['gamme']} · {dernier['vitesse']:g} tr/min · {dernier['couple']:g} N·m · "
+                           f"usure {dernier['usure_outil']:g} min")
+                if dernier["usure_outil"] >= ZONE_USURE:
+                    st.caption(f"⚠️ Outil en zone d'usure (≥ {ZONE_USURE} min) : changement préventif.")
+                courbe = alt.Chart(vus).mark_line(color=BLEU, point=alt.OverlayMarkDef(size=18)).encode(
+                    x=alt.X("releve:Q", title="Relevé", scale=alt.Scale(domain=[1, total])),
+                    y=alt.Y("risque:Q", title="Risque", axis=alt.Axis(format="%"), scale=alt.Scale(domain=[0, 1])),
+                    tooltip=[alt.Tooltip("releve", title="Relevé"), alt.Tooltip("risque", title="Risque", format=".0%")])
+                seuil = alt.Chart(pd.DataFrame({"y": [SEUIL]})).mark_rule(color=ORANGE, strokeDash=[5, 4]).encode(y="y:Q")
+                pannes = alt.Chart(vus[vus["panne"] == 1]).mark_point(shape="cross", color=ROUGE, size=140,
+                                                                         filled=True).encode(x="releve:Q", y="risque:Q")
+                st.altair_chart(alt.layer(courbe, seuil, pannes).properties(height=180), width="stretch")
+                b = bilan_surveillance(vus, SEUIL)
+                st.caption(f"Pannes réelles : {b['pannes']} · détectées : {b['detectees']} · "
+                           f"fausses alertes : {b['fausses_alertes']}")
+            for _, l in vus[vus["risque"] >= SEUIL].iterrows():
+                journal.append({"Relevé": int(l["releve"]), "Machine": nom, "Risque": float(l["risque"]),
+                                "Panne prévue": NOMS_MODES[l["type_prevu"]],
+                                "Panne réelle ?": "oui" if l["panne"] == 1 else "non (fausse alerte)"})
+
+        st.subheader(f"Journal des alertes ({len(journal)})")
+        if journal:
+            st.dataframe(pd.DataFrame(journal).sort_values(["Relevé", "Machine"], ascending=[False, True]),
+                         hide_index=True, width="stretch",
+                         column_config={"Risque": st.column_config.ProgressColumn(format="percent", min_value=0,
+                                                                                  max_value=1)})
+        else:
+            st.caption("Aucune alerte pour l'instant.")
+        if pos == total:
+            tot = [bilan_surveillance(seg, SEUIL) for seg in simu.values()]
+            st.success(f"Simulation terminée : {sum(t['detectees'] for t in tot)} pannes réelles détectées sur "
+                       f"{sum(t['pannes'] for t in tot)}, {sum(t['fausses_alertes'] for t in tot)} fausses alertes, "
+                       f"sur {sum(t['releves'] for t in tot)} relevés.")
+
+    tableau_de_bord()
+
+    st.subheader("Traiter une alerte")
+    pos = st.session_state["surv_pos"]
+    en_alerte = {nom: seg.iloc[pos - 1] for nom, seg in simu.items() if pos and seg.iloc[pos - 1]["risque"] >= SEUIL}
+    if st.session_state["surv_marche"]:
+        st.caption("Mettez la simulation en pause pour ouvrir l'intervention guidée d'une machine en alerte.")
+    elif not en_alerte:
+        st.caption("Aucune machine en alerte au relevé actuel.")
+    else:
+        nom = st.selectbox("Machine en alerte", list(en_alerte))
+        if st.button("🧰 Lancer l'intervention guidée pour cette machine", type="primary"):
+            l = en_alerte[nom]
+            transmettre_machine(pd.DataFrame([{c: l[c] for c in ["gamme", "temp_air", "temp_process", "vitesse",
+                                                                  "couple", "usure_outil"]}]))
+
+
 PAGE_INTERVENTION = st.Page(page_intervention, title="Intervention guidée", icon="🧰", url_path="intervention")
 pages = [
     st.Page(page_diagnostic, title="Diagnostic d'une machine", icon="🔧", url_path="diagnostic", default=True),
     st.Page(page_lot, title="Analyse d'un lot", icon="📋", url_path="lot"),
     PAGE_INTERVENTION,
+    st.Page(page_surveillance, title="Surveillance en continu", icon="📡", url_path="surveillance"),
     st.Page(page_simulation, title="Simulation", icon="🔬", url_path="simulation"),
     st.Page(page_economie, title="Économie", icon="💶", url_path="economie"),
     st.Page(page_a_propos, title="À propos", icon="ℹ️", url_path="a-propos"),
