@@ -5,6 +5,7 @@ Lancement, depuis le dossier du projet :
 """
 import json
 import sys
+from datetime import datetime
 from pathlib import Path
 
 import altair as alt
@@ -20,6 +21,8 @@ from src.donnees import CAPTEURS, PLAGES, ajouter_variables, charger, separer  #
 from src.economie import Hypotheses, bilan, courbe_couts  # noqa: E402
 from src.explication import LIBELLES, expliquer, type_probable  # noqa: E402
 from src.lot import ZONE_USURE, analyser_lot, lire_csv  # noqa: E402
+from src.donnees import NOMS_MODES  # noqa: E402
+from src.procedures import FICHE_PAR_TYPE, charger_fiches, choisir_fiche, compte_rendu, deroule  # noqa: E402
 from src.lot import niveau as niveau_texte  # noqa: E402
 
 st.set_page_config(page_title="PrédiMaint — Atelier d'usinage", page_icon="🏭", layout="wide")
@@ -78,18 +81,25 @@ def badge(texte: str, couleur: str) -> None:
                 f"font-weight:600;font-size:1.05rem'>{texte}</div>", unsafe_allow_html=True)
 
 
-def saisie_machine(cle: str) -> pd.DataFrame:
-    """Formulaire des mesures d'une machine (valeurs par défaut : une machine qui fonctionne normalement)."""
+MACHINE_NORMALE = dict(gamme="L", temp_air=300.0, temp_process=310.0, vitesse=1500, couple=40.0, usure_outil=100)
+
+
+def saisie_machine(cle: str, defauts: dict | None = None) -> pd.DataFrame:
+    """Formulaire des mesures d'une machine (par défaut : une machine qui fonctionne normalement)."""
+    v0 = {**MACHINE_NORMALE, **(defauts or {})}
     c1, c2, c3 = st.columns(3)
-    gamme = c1.selectbox("Gamme du produit", ["L", "M", "H"], key=f"{cle}_gamme",
-                         help="L : qualité basse (60 % de la production), M : moyenne, H : haute")
-    temp_air = c2.number_input("Température de l'air (K)", *PLAGES["temp_air"], 300.0, 0.1, key=f"{cle}_ta")
-    temp_process = c3.number_input("Température du procédé (K)", *PLAGES["temp_process"], 310.0, 0.1,
-                                   key=f"{cle}_tp")
+    gamme = c1.selectbox("Gamme du produit", ["L", "M", "H"], index=["L", "M", "H"].index(v0["gamme"]),
+                         key=f"{cle}_gamme", help="L : qualité basse (60 % de la production), M : moyenne, H : haute")
+    temp_air = c2.number_input("Température de l'air (K)", *PLAGES["temp_air"], float(v0["temp_air"]), 0.1,
+                               key=f"{cle}_ta")
+    temp_process = c3.number_input("Température du procédé (K)", *PLAGES["temp_process"],
+                                   float(v0["temp_process"]), 0.1, key=f"{cle}_tp")
     c4, c5, c6 = st.columns(3)
-    vitesse = c4.number_input("Vitesse de rotation (tr/min)", *PLAGES["vitesse"], 1500, 10, key=f"{cle}_v")
-    couple = c5.number_input("Couple (N·m)", *PLAGES["couple"], 40.0, 0.5, key=f"{cle}_c")
-    usure = c6.number_input("Usure de l'outil (min)", *PLAGES["usure_outil"], 100, 1, key=f"{cle}_u")
+    vitesse = c4.number_input("Vitesse de rotation (tr/min)", *PLAGES["vitesse"], int(v0["vitesse"]), 10,
+                              key=f"{cle}_v")
+    couple = c5.number_input("Couple (N·m)", *PLAGES["couple"], float(v0["couple"]), 0.5, key=f"{cle}_c")
+    usure = c6.number_input("Usure de l'outil (min)", *PLAGES["usure_outil"], int(v0["usure_outil"]), 1,
+                            key=f"{cle}_u")
     return pd.DataFrame([{"gamme": gamme, "temp_air": temp_air, "temp_process": temp_process,
                           "vitesse": vitesse, "couple": couple, "usure_outil": usure}])
 
@@ -144,6 +154,9 @@ def page_diagnostic():
         else:
             st.subheader("Fonctionnement normal")
             st.info("Aucune intervention n'est nécessaire pour l'instant. Poursuivre la surveillance.")
+        if risque >= SEUIL or mesures["usure_outil"].iloc[0] >= ZONE_USURE:
+            if st.button("🧰 Lancer l'intervention guidée", type="primary"):
+                transmettre_machine(mesures)
 
     st.subheader("Pourquoi ce risque ?")
     expl = expliquer(MODELE, mesures, REFERENCE, ENTREES)
@@ -402,9 +415,101 @@ Jean de Dieu Riche TCHIBOUANGA — technicien en maintenance industrielle en rec
 """)
 
 
+# ---------------------------------------------------------------------------- Page 6 : intervention guidée
+def transmettre_machine(mesures: pd.DataFrame) -> None:
+    """Envoie la machine affichée vers la page Intervention guidée."""
+    st.session_state["intervention_machine"] = mesures.iloc[0].to_dict()
+    st.session_state["intervention_n"] = st.session_state.get("intervention_n", 0) + 1
+    st.switch_page(PAGE_INTERVENTION)
+
+
+def diagnostic_machine(mesures: pd.DataFrame) -> dict:
+    risque = float(risques(mesures)[0])
+    code_type = type_probable(MODELE_TYPE, mesures, ENTREES).iloc[0]["code"] if risque >= SEUIL else None
+    return {"risque": risque, "niveau": niveau(risque)[0], "type": code_type}
+
+
+def page_intervention():
+    fiches = charger_fiches()
+    st.title("🧰 Intervention guidée")
+    st.caption("À partir du diagnostic, l'application déroule la bonne procédure : consignation, protection, "
+               "intervention, puis remise en service. Cochez chaque étape et téléchargez le compte rendu.")
+    st.warning("Procédures **types** rédigées pour ce projet de démonstration : dans une usine, elles sont "
+               "remplacées par les procédures de l'entreprise, qui restent la référence.", icon="⚠️")
+    guide = fiches["GUIDE-01"]
+    with st.expander(f"📖 {guide.code} — {guide.titre}"):
+        st.markdown("\n".join(f"{i}. {e}" for i, e in enumerate(guide.etapes, 1)))
+
+    n = st.session_state.get("intervention_n", 0)
+    transmise = st.session_state.get("intervention_machine")
+    st.subheader("1. Machine")
+    if transmise:
+        st.caption("Mesures transmises depuis la page Diagnostic (modifiables).")
+    mesures = saisie_machine(f"int{n}", transmise)
+    diag = diagnostic_machine(mesures)
+    c1, c2, c3 = st.columns(3)
+    c1.metric("Risque de panne", pct(diag["risque"]))
+    with c2:
+        badge(diag["niveau"], niveau(diag["risque"])[1])
+    c3.metric("Panne probable", NOMS_MODES[diag["type"]] if diag["type"] else "—")
+
+    st.subheader("2. Fiche d'intervention")
+    propose = choisir_fiche(diag["risque"], SEUIL, diag["type"], float(mesures["usure_outil"].iloc[0]), ZONE_USURE)
+    codes = list(FICHE_PAR_TYPE.values())
+    if propose is None:
+        st.success("Aucune intervention n'est nécessaire : pas d'alerte et outil hors de la zone d'usure.")
+        if not st.toggle("Réaliser quand même une intervention (inspection, changement d'outil…)",
+                         key=f"int{n}_force"):
+            return
+        propose = FICHE_PAR_TYPE["RNF"]
+    else:
+        raison = ("type de panne prédit par le modèle" if diag["risque"] >= SEUIL
+                  else f"usure de l'outil ≥ {ZONE_USURE} min (règle préventive)")
+        st.info(f"Fiche proposée : **{propose} — {fiches[propose].titre}** ({raison}).")
+    code = st.selectbox("Fiche à suivre", codes, index=codes.index(propose),
+                        format_func=lambda c: f"{c} — {fiches[c].titre}", key=f"int{n}_fiche_{propose}")
+
+    st.subheader("3. Déroulé")
+    sequence = deroule(code)
+    faites = {}
+    for i, fiche in enumerate(sequence, 1):
+        if i > 1 and not all(faites[sequence[0].code]):
+            st.info("🔒 Les étapes suivantes s'affichent une fois la **consignation** (SEC-01) entièrement validée.")
+            for f in sequence[i - 1:]:
+                faites[f.code] = [False] * len(f.etapes)
+            break
+        with st.container(border=True):
+            st.markdown(f"#### {i}. {fiche.code} — {fiche.titre}")
+            st.caption(f"⏱️ {fiche.meta.get('Durée estimée', '—')} · 👷 {fiche.meta.get('Intervenant', '—')}")
+            with st.expander("Quand l'utiliser · Sécurité · Outillage"):
+                for nom in ["Quand l'utiliser", "Sécurité", "Outillage et pièces"]:
+                    st.markdown(f"**{nom}**\n\n" + "\n".join(f"- {e}" for e in fiche.section(nom)))
+            faites[fiche.code] = [st.checkbox(f"{j}. {e}", key=f"int{n}_{code}_{fiche.code}_{j}")
+                                  for j, e in enumerate(fiche.etapes, 1)]
+            st.markdown("**Vérification** : " + " · ".join(fiche.section("Vérification")))
+
+    total = sum(len(v) for v in faites.values())
+    cochees = sum(sum(v) for v in faites.values())
+    st.progress(cochees / total if total else 0.0, text=f"Avancement : {cochees} étapes sur {total}")
+    if total and cochees == total:
+        st.success("✅ Intervention terminée. Relevez les nouvelles mesures et relancez un diagnostic.")
+
+    st.subheader("4. Compte rendu")
+    c1, c2 = st.columns([1, 2])
+    technicien = c1.text_input("Technicien", key=f"int{n}_tech")
+    observations = c2.text_area("Observations (pièces changées, anomalies…)", key=f"int{n}_obs", height=100)
+    texte = compte_rendu(mesures.iloc[0].to_dict(), diag, code, faites, technicien, observations)
+    st.download_button("📄 Télécharger le compte rendu", texte.encode("utf-8"),
+                       f"compte_rendu_{code}_{datetime.now():%Y%m%d_%H%M}.md", "text/markdown")
+    with st.expander("Aperçu du compte rendu"):
+        st.markdown(texte)
+
+
+PAGE_INTERVENTION = st.Page(page_intervention, title="Intervention guidée", icon="🧰", url_path="intervention")
 pages = [
     st.Page(page_diagnostic, title="Diagnostic d'une machine", icon="🔧", url_path="diagnostic", default=True),
     st.Page(page_lot, title="Analyse d'un lot", icon="📋", url_path="lot"),
+    PAGE_INTERVENTION,
     st.Page(page_simulation, title="Simulation", icon="🔬", url_path="simulation"),
     st.Page(page_economie, title="Économie", icon="💶", url_path="economie"),
     st.Page(page_a_propos, title="À propos", icon="ℹ️", url_path="a-propos"),

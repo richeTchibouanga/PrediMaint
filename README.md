@@ -36,6 +36,7 @@ Résultats sur **2 000 relevés jamais vus** par le modèle :
 | Page | Fonction |
 |---|---|
 | 🔧 **Diagnostic d'une machine** | Risque de panne, niveau d'alerte, type de panne probable, **explication** de la décision et **action recommandée** |
+| 🧰 **Intervention guidée** | La bonne procédure selon la panne prédite : consignation, protections, étapes à cocher, remise en service, compte rendu à télécharger |
 | 📋 **Analyse d'un lot** | Import d'un fichier CSV, classement des machines par risque, export des résultats |
 | 🔬 **Simulation** | Évolution du risque quand une mesure varie : jusqu'où peut-on pousser la machine ? |
 | 💶 **Économie** | Coût de la maintenance corrective et de la maintenance prédictive ; hypothèses et seuil réglables |
@@ -58,6 +59,7 @@ Résultats sur **2 000 relevés jamais vus** par le modèle :
 4. **[Étude économique](docs/ETUDE_ECONOMIQUE.md)** : comparaison avec la maintenance corrective, choix du seuil, sensibilité aux hypothèses.
 5. **[Application](docs/APPLICATION.md)** : tableau de bord Streamlit à 5 pages.
 6. **[Guide de démonstration et de test](docs/GUIDE_DEMONSTRATION.md)** : scénarios vérifiés, script de démonstration, questions et réponses.
+7. **[Phase 2 : intervention guidée](docs/INTERVENTION_GUIDEE.md)** : 9 fiches de procédures (sécurité, une fiche par type de panne, remise en service). L'application déroule la bonne fiche, sans modèle de langage, et donc sans coût d'utilisation.
 
 ## Ce qu'il faut retenir
 
@@ -85,7 +87,7 @@ pip install -r requirements.txt
 | Lancer l'application | `streamlit run app/app.py` |
 | Réentraîner le modèle et régénérer le rapport | `python -m src.entrainer` |
 | Refaire l'étude économique | `python -m src.economie` |
-| Lancer les tests (24 tests) | `pip install -r requirements-dev.txt` puis `python -m pytest tests` |
+| Lancer les tests (35 tests) | `pip install -r requirements-dev.txt` puis `python -m pytest tests` |
 
 Des fichiers d'exemple pour tester l'analyse de lot se trouvent dans [`data/exemples/`](data/exemples).
 
@@ -99,12 +101,14 @@ predimaint/
 │   ├── entrainer.py        comparaison des modèles, seuil, évaluation, rapport
 │   ├── explication.py      explication des prédictions, actions de maintenance
 │   ├── economie.py         étude économique
-│   └── lot.py              lecture et analyse d'un fichier de relevés
+│   ├── lot.py              lecture et analyse d'un fichier de relevés
+│   └── procedures.py       fiches de procédures, choix de la fiche, compte rendu d'intervention
 ├── models/                 modèle entraîné et métadonnées
 ├── notebooks/              exploration des données
 ├── tests/                  tests automatiques (pytest)
 ├── data/raw/               données AI4I 2020
 ├── data/exemples/          fichiers de test pour l'analyse de lot
+├── data/procedures/        fiches de procédures de maintenance (Markdown)
 └── docs/                   cahier des charges, rapports, guides, PDF de chaque étape, figures
 ```
 

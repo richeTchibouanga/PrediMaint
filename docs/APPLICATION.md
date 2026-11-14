@@ -10,11 +10,12 @@ L'application rassemble en un seul outil le modèle de prédiction (étape 3) et
 - au **responsable de maintenance**, qui veut prioriser les interventions sur tout le parc ;
 - au **directeur d'usine**, qui veut connaître le gain de la maintenance prédictive.
 
-Elle compte **5 pages**, accessibles par le menu de gauche.
+Elle compte **6 pages**, accessibles par le menu de gauche.
 
 | Page | Fonction du cahier des charges | À quoi elle sert |
 |---|---|---|
 | Diagnostic d'une machine | F13 | Risque, type de panne, explication et action pour une machine |
+| Intervention guidée | Phase 2 | Dérouler la bonne procédure (consignation, intervention, remise en service) et produire le compte rendu — voir [INTERVENTION_GUIDEE.md](INTERVENTION_GUIDEE.md) |
 | Analyse d'un lot | F14 | Classer tout un parc de machines par niveau de risque |
 | Simulation | F15 | Voir comment le risque évolue quand une mesure change |
 | Économie | F16 (F9 à F12) | Comparer les coûts avec et sans le modèle |
