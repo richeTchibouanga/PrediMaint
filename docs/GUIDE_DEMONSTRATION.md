@@ -53,7 +53,7 @@
 3. L'application s'ouvre dans le navigateur, à l'adresse `http://localhost:8501`.
 4. Le premier affichage prend quelques secondes, le temps de charger le modèle. Ensuite, chaque calcul est instantané.
 
-**Une fois l'application publiée en ligne (étape 6)**, il suffira d'ouvrir son adresse web, depuis n'importe quel ordinateur ou téléphone.
+**Sans installation** : l'application est aussi en ligne, à l'adresse **https://predimaint.streamlit.app**, accessible depuis n'importe quel ordinateur ou téléphone. C'est la solution la plus simple pour une démonstration en entretien.
 
 **Le menu de gauche** donne accès aux 5 pages : Diagnostic d'une machine, Analyse d'un lot, Simulation, Économie, À propos.
 

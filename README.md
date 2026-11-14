@@ -2,7 +2,7 @@
 
 **Prédire la panne d'une machine-outil avant qu'elle n'arrive, l'expliquer, recommander l'action de maintenance et chiffrer le gain pour l'usine.**
 
-🔗 **Application en ligne** : *(lien ajouté après la mise en ligne)*
+🔗 **Application en ligne : [predimaint.streamlit.app](https://predimaint.streamlit.app)** — à essayer directement dans le navigateur, sans installation.
 
 ![Diagnostic d'une machine](docs/figures/app-1-diagnostic.png)
 
@@ -73,8 +73,8 @@ Résultats sur **2 000 relevés jamais vus** par le modèle :
 Prérequis : Python 3.12 ou plus récent.
 
 ```bash
-git clone https://github.com/richeTchibouanga/predimaint.git
-cd predimaint
+git clone https://github.com/richeTchibouanga/PrediMaint.git
+cd PrediMaint
 python -m venv .venv
 .venv\Scripts\activate            # Windows   (Linux / macOS : source .venv/bin/activate)
 pip install -r requirements.txt
