@@ -659,7 +659,7 @@ pages = [
     st.Page(page_diagnostic, title="Diagnostic d'une machine", icon="🔧", url_path="diagnostic", default=True),
     st.Page(page_lot, title="Analyse d'un lot", icon="📋", url_path="lot"),
     PAGE_INTERVENTION,
-    st.Page(page_surveillance, title="Surveillance en continu", icon="📡", url_path="surveillance"),
+    st.Page(page_surveillance, title="Surveillance (simulation)", icon="📡", url_path="surveillance"),
     st.Page(page_simulation, title="Simulation", icon="🔬", url_path="simulation"),
     st.Page(page_economie, title="Économie", icon="💶", url_path="economie"),
     st.Page(page_a_propos, title="À propos", icon="ℹ️", url_path="a-propos"),

@@ -63,7 +63,15 @@ Capteurs de la machine → commande numérique / automate → passerelle (IoT)
      → alerte envoyée au technicien seulement s'il y a un problème
 ```
 
-Le technicien n'aurait plus rien à saisir. Il recevrait les alertes, puis suivrait l'intervention guidée. **Première étape réaliste, sans développement** : beaucoup de commandes numériques savent exporter leurs relevés en CSV. Ce fichier peut être importé chaque jour dans la page Analyse d'un lot.
+Le technicien n'aurait plus rien à saisir. Il recevrait les alertes, puis suivrait l'intervention guidée.
+
+**Aujourd'hui, cette chaîne n'existe pas** : l'application n'est reliée à aucune machine. Elle analyse les mesures qu'on lui fournit, à l'instant où on les fournit. La page Surveillance en continu est une **simulation** de ce fonctionnement. Pour le rendre réel, il faudrait :
+
+1. des machines qui mesurent : la plupart des machines modernes mesurent déjà vitesse, effort et temps d'outil ; on ajoute parfois des sondes de température ;
+2. une **passerelle** qui lit ces mesures toutes les quelques minutes, grâce aux standards industriels **OPC UA** ou **MTConnect** ;
+3. un programme qui transmet les mesures au modèle et envoie une **alerte** (e-mail, SMS, écran d'atelier) seulement en cas de problème.
+
+C'est un projet d'intégration, qui demande l'accès aux machines d'une usine. **Première étape réaliste, sans développement** : beaucoup de commandes numériques savent exporter leurs relevés en CSV. Ce fichier peut être importé chaque jour dans la page Analyse d'un lot.
 
 ### 3.3 Comment sait-elle qu'une pièce doit être changée ?
 

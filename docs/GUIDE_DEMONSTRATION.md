@@ -332,7 +332,13 @@ Elle ne voit pas la pièce : elle raisonne sur les mesures. Le modèle calcule u
 **16. Comment évaluez-vous l'urgence ?**
 Par niveaux : sous 26 % de risque, pas d'alerte ; de 26 à 60 %, intervention à planifier ; au-delà de 60 %, intervention rapide ; et la zone d'usure à 200 minutes. La limite, c'est que l'outil juge l'état actuel, pas le temps restant avant la panne. Pour dire « panne probable dans 30 heures », il faudrait suivre les mesures dans le temps et entraîner un modèle de durée de vie restante (RUL).
 
-**17. Que feriez-vous ensuite ?**
+**17. Un opérateur expérimenté remarque déjà la surchauffe ou l'usure : à quoi sert PrédiMaint ?**
+Il remarque les signes visibles (bruit, odeur, fumée, pièce ratée), mais souvent quand le mal est déjà fait. PrédiMaint repère des **combinaisons invisibles** : un effort de 62 N·m et un outil à 205 minutes paraissent normaux séparément, mais ensemble ils donnent 96 % de risque de surcharge. Deux machines qui ne diffèrent que de 0,4 degré passent de 0,3 % à 90 % de risque, un écart qu'aucune main ne sent. Il donne aussi le même niveau de jugement à un nouvel embauché qu'à un ancien, garde le savoir quand l'ancien part, aide à prioriser et laisse une trace des interventions. Il ne remplace pas l'opérateur : devant de la fumée, on arrête la machine sans attendre l'application. Et pour l'usure seule, il applique la même règle qu'un bon régleur, changer l'outil à 200 minutes. Si les opérateurs repèrent déjà presque toutes les pannes à temps, le gain réel sera plus faible que celui de l'étude économique : il faudrait le mesurer dans l'usine.
+
+**18. L'application surveille-t-elle vraiment toutes les machines en permanence ?**
+Pas aujourd'hui, et il faut le dire clairement : elle n'est pas connectée aux machines. Elle analyse les mesures qu'on lui donne : une machine saisie à la main, ou **tout un parc d'un coup grâce à l'import CSV**, mais à l'instant de l'import seulement. La page Surveillance en continu est une **simulation** qui montre le fonctionnement cible. Pour une vraie surveillance permanente, il faudrait une passerelle qui lit les mesures des machines toutes les quelques minutes (standards industriels OPC UA ou MTConnect), appelle le modèle et envoie une alerte. C'est un projet d'intégration qui demande une usine partenaire. L'étape intermédiaire réaliste est un export CSV automatique chaque soir, analysé le matin.
+
+**19. Que feriez-vous ensuite ?**
 Ajouter un assistant IA conversationnel qui s'appuie sur les fiches de procédures existantes pour répondre aux questions du technicien. Brancher l'application sur de vrais capteurs (passerelle IoT) avec des alertes automatiques. Travailler sur des séries temporelles pour estimer la durée de vie restante d'un outil.
 
 ---
