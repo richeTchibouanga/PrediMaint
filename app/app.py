@@ -16,6 +16,10 @@ import streamlit as st
 
 RACINE = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(RACINE))
+# Lors d'une mise à jour, Streamlit Cloud relance ce script sans redémarrer Python : les modules du projet
+# (src.*) resteraient dans leur ancienne version. On les retire du cache pour toujours charger la version actuelle.
+for _nom in [m for m in sys.modules if m == "src" or m.startswith("src.")]:
+    del sys.modules[_nom]
 
 from src.donnees import CAPTEURS, PLAGES, ajouter_variables, charger, separer  # noqa: E402
 from src.economie import Hypotheses, bilan, courbe_couts  # noqa: E402
